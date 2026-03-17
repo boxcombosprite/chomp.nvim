@@ -8,6 +8,8 @@ local config = {}
 M.setup = function(options)
   local opts = vim.tbl_deep_extend('force', default_options, options or {})
   config = opts
+
+  require 'chomp.api.commands'
 end
 
 return M
