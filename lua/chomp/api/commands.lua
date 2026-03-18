@@ -1,6 +1,7 @@
 vim.api.nvim_create_user_command('Chomp', function(opts)
   if #opts.args == 0 then
-    require('chomp.ui').open()
+    local win = require('chomp.ui').new_win {}
+    win.open()
     return
   end
 

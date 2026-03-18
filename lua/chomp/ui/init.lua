@@ -1,7 +1,18 @@
 local M = {}
 
-local create_float_config = function(opts)
-  opts = opts or {}
+---@class chomp.Window
+---@field open function
+---@field close function
+
+---@class chomp.FloatConfig
+---@field win_config vim.api.keyset.win_config
+---@field win_opts table the windowlocal options
+---@field buf_opts table the buflocal options
+
+---@param options table
+---@return chomp.FloatConfig
+local create_float_config = function(options)
+  local opts = options or {}
   local width = opts.width or math.floor(vim.o.columns * 0.4)
   local height = opts.height or math.floor(vim.o.lines * 0.8)
 
@@ -48,6 +59,8 @@ local create_float_config = function(opts)
   }
 end
 
+---@param config chomp.FloatConfig
+---@return table
 local spawn_float = function(config)
   local buf = vim.api.nvim_create_buf(false, true)
   local win = vim.api.nvim_open_win(buf, true, config.win_config)
@@ -63,23 +76,53 @@ local spawn_float = function(config)
   return { buf = buf, win = win }
 end
 
-M.open = function()
-  local float_config = create_float_config {}
-  local float = spawn_float(float_config)
-  vim.keymap.set('n', 'q', function() vim.api.nvim_win_close(float.win, true) end, { buffer = float.buf })
+---@param options table
+---@return chomp.Window
+M.new_win = function(options)
+  local opts = options or {}
+  local float
 
-  vim.api.nvim_create_autocmd('VimResized', {
-    group = vim.api.nvim_create_augroup('chomp-resized', {}),
-    callback = function()
-      if not vim.api.nvim_win_is_valid(float.win) then return end
+  local close = function()
+    if float and vim.api.nvim_win_is_valid(float.win) then pcall(vim.api.nvim_win_close, float.win, true) end
+  end
 
-      local updated = create_float_config()
-      vim.api.nvim_win_set_config(float.win, updated.win_config)
-      --recalc contents
+  local open = function()
+    local float_config = create_float_config(opts)
+    float = spawn_float(float_config)
+    vim.keymap.set('n', 'q', close, { buffer = float.buf })
+
+    vim.api.nvim_create_autocmd('VimResized', {
+      group = vim.api.nvim_create_augroup('chomp-resized', {}),
+      callback = function()
+        if not vim.api.nvim_win_is_valid(float.win) then return end
+
+        --dirty yes
+        local updated = create_float_config {}
+        vim.api.nvim_win_set_config(float.win, updated.win_config)
+      end,
+    })
+
+    vim.api.nvim_create_autocmd('BufLeave', {
+      buffer = float.buf,
+      callback = close,
+    })
+    --local namespace = vim.api.nvim_create_namespace("ns")
+  end
+
+  return {
+    close = close,
+    open = open,
+
+    state = function()
+      local mutate_state, get_state
+      return mutate_state, get_state
     end,
-  })
-  --local namespace = vim.api.nvim_create_namespace("ns")
+
+    draw = function() end,
+  }
 end
+
+-- TODO: keymaps for categories, refresh, refresh all, open in og buffer
 
 -- nvim_create_namespace()
 
