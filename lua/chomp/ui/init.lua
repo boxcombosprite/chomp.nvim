@@ -62,27 +62,27 @@ local create_float_config = function(opts)
   }
 end
 
----@param config chomp.FloatConfig
+---@param opts chomp.FloatConfig
 ---@return table
-local spawn_float = function(config)
+local spawn_float = function(opts)
   local buf = vim.api.nvim_create_buf(false, true)
   local win = vim.api.nvim_open_win(buf, true, config.win_config)
 
-  for key, value in pairs(config.win_opts) do
+  for key, value in pairs(opts.win_opts) do
     vim.api.nvim_set_option_value(key, value, { win = win, scope = 'local' })
   end
 
-  for key, value in pairs(config.buf_opts) do
+  for key, value in pairs(opts.buf_opts) do
     vim.api.nvim_set_option_value(key, value, { buf = buf, scope = 'local' })
   end
 
   return { buf = buf, win = win }
 end
 
----@param options table
+---@param opts table
 ---@return chomp.Window
-M.new_win = function(options)
-  local opts = options or {}
+M.new_win = function(opts)
+  local options = opts or {}
   local float
 
   local close = function()
@@ -90,7 +90,7 @@ M.new_win = function(options)
   end
 
   local open = function()
-    local float_config = create_float_config(opts)
+    local float_config = create_float_config(options)
     float = spawn_float(float_config)
     vim.keymap.set('n', 'q', close, { buffer = float.buf })
 
