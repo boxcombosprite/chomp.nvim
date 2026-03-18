@@ -1,4 +1,5 @@
-local db = require 'chomp.db'
+local config = require 'chomp.config'
+local state = require 'chomp.state'
 
 local M = {}
 
@@ -11,12 +12,12 @@ local M = {}
 ---@field win_opts table the windowlocal options
 ---@field buf_opts table the buflocal options
 
----@param options table
+---@param opts table
 ---@return chomp.FloatConfig
-local create_float_config = function(options)
-  local opts = options or {}
-  local width = opts.width or math.floor(vim.o.columns * 0.4)
-  local height = opts.height or math.floor(vim.o.lines * 0.8)
+local create_float_config = function(opts)
+  local options = opts or {}
+  local width = options.width or math.floor(vim.o.columns * config.current.ui.width)
+  local height = options.height or math.floor(vim.o.lines * config.current.ui.height)
 
   local col = math.floor((vim.o.columns - width) / 2)
   local row = math.floor((vim.o.lines - height) / 2)
@@ -29,7 +30,7 @@ local create_float_config = function(options)
     row = row,
     col = col,
     style = 'minimal',
-    border = opts.border or 'none',
+    border = config.current.ui.border or vim.g.winborder,
     zindex = 45,
   }
 

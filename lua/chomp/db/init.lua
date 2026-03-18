@@ -1,6 +1,8 @@
+local config = require 'chomp.config'
+
 local M = {}
 
-local path = vim.fn.stdpath 'data' .. 'feeds.lua'
+local path = config.current.data_dir .. '/feeds.lua'
 
 M.save = function(data)
   local tmp_path = path .. '.tmp'
