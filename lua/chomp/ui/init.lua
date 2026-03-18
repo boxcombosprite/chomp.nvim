@@ -67,6 +67,17 @@ M.open = function()
   local float_config = create_float_config {}
   local float = spawn_float(float_config)
   vim.keymap.set('n', 'q', function() vim.api.nvim_win_close(float.win, true) end, { buffer = float.buf })
+
+  vim.api.nvim_create_autocmd('VimResized', {
+    group = vim.api.nvim_create_augroup('chomp-resized', {}),
+    callback = function()
+      if not vim.api.nvim_win_is_valid(float.win) then return end
+
+      local updated = create_float_config()
+      vim.api.nvim_win_set_config(float.win, updated.win_config)
+      --recalc contents
+    end,
+  })
   --local namespace = vim.api.nvim_create_namespace("ns")
 end
 
