@@ -10,31 +10,30 @@ M.head = function(_url, callback)
     local val = vim.trim(string.sub(line, sep + 1))
     return key, val
   end
-  vim.system({ 'curl', '-L', '-s', '-I', util.url.normalize(url) }, { text = true }, function(obj)
+
+  vim.system({ 'curl', '-L', '-s', '-I', url.normalize(_url) }, { text = true }, function(obj)
     if obj.code ~= 0 then
-      --notify
+      callback(nil, 'curl exited with code ' .. obj.code .. ': ' .. (obj.stderr or ''))
       return
     end
+    if type(obj.stdout) ~= 'string' then callback(nil, 'no output from curl') end
     local res = {}
-    local raw = obj.stdout
-    assert(type(raw) == 'string', 'nil output from curl')
-    local lines = vim.split(raw, '\n', { trimempty = true })
+    local lines = vim.split(obj.stdout, '\n', { trimempty = true })
     for i = 2, #lines do
       local header, value = parse_header(lines[i])
-      if not header then return end
+      if not header then break end
       res[header] = value
     end
 
-    callback(res)
+    callback(res, nil)
   end)
 end
 
-M.get = function(url, callback)
-  vim.system({ 'curl', '-L', '-s', util.url.normalize(url) }, { text = true }, function(obj)
-    if obj.code ~= 0 then return end
-    local raw = obj.stdout
-    assert(type(raw) == 'string', 'nil output from curl')
-    callback(raw)
+M.get = function(_url, callback)
+  vim.system({ 'curl', '-L', '-s', url.normalize(_url) }, { text = true }, function(obj)
+    if obj.code ~= 0 then callback(nil, 'curl exited with code ' .. obj.code .. ': ' .. (obj.stderr or '')) end
+    if type(obj.stdout) ~= 'string' then callback(nil, 'no output from curl') end
+    callback(obj.stdout, nil)
   end)
 end
 

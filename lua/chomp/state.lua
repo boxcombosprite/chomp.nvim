@@ -23,9 +23,13 @@ M.mark_read = function(feed, id)
   if state.feeds and state.feeds[feed] then table.insert(state.feeds[feed].read, id) end
 end
 
-local new_feed = function(url)
-  local data = util.http.get(url)
-  local _parser = util.parser.new(db.cache.save_feed(data.xml))
+local new_feed = function(_url)
+  local data
+  http.get(_url, function(res, err)
+    if res then data = res end
+  end)
+  if not data then return nil end
+  local _parser = parser.new(db.cache.save_feed(data.xml))
 
   return {
     title = _parser:title(),
