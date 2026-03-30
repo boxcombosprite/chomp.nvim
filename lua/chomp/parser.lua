@@ -4,7 +4,9 @@ local providers = require 'chomp.providers'
 local M = {}
 
 local feed_type = function(doc)
-  -- return type, version
+  local topel = doc.kids[3]
+  if topel.name == 'feed' then return 'atom', '1.0' end
+  if topel.name == 'rss' then return 'rss', topel.attr.version end
 end
 
 M.new = function(xml)
