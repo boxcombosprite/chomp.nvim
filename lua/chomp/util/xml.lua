@@ -1,40 +1,56 @@
 local M = {}
 
---- get text values from list of elements by name
----@param wanted string[]
----@param els table[]
----@param mode? "value" | "attr"
----@return table<string, string>
-M.extract = function(wanted, els, mode)
-  if not mode then mode = 'value' end
-  local want = {}
-  for _, k in ipairs(wanted) do
-    want[k] = true
-  end
+---@class XmlDocument
+---@field type 'document'
+---@field name '#doc'
+---@field kids table<XmlProcessingInstruction|XmlElement|XmlCommentNode>
+---@field root XmlElement
 
+---@class XmlAttribute
+
+---@class XmlTextNode
+
+---@class XmlCommentNode
+
+---@class XmlProcessingInstruction
+
+---@class XmlElement
+---@field type 'element'
+---@field name string
+---@field nsURI string
+---@field nsPrefix string
+---@field attr table<string|integer, XmlAttribute|XmlAttribute[]> indexed by both name (string->attr) and index (int->table of attrs)
+---@field kids table<XmlElement|XmlCommentNode|XmlTextNode|XmlProcessingInstruction>
+---@field el table<XmlElement>
+---@field parent XmlElement | XmlDocument
+
+---@class XmlMapping
+---@field dst string destination key in output table
+---@field func fun(e: table): string?
+
+---@alias XmlMappingTable table<string, XmlMapping>
+
+---@param e XmlElement
+---@return string?
+M.get_element_text = function(e)
+  if e.kids[1] then return e.kids[1].value end
+end
+
+---@param e XmlElement
+---@return string?
+M.get_element_attr = function(e) end
+
+---@param mappings XmlMappingTable
+---@param els table[]
+---@return table<string, string?>
+M.extract = function(mappings, els)
   local ret = {}
-  for _, e in ipairs(els) do
-    if mode == 'value' then
-      if want[e.name] and e.kids[1] then ret[e.name] = e.kids[1].value end
-    elseif mode == 'attr' then
-      if want[e.name] and e.attr then
-      end
-    end
+
+  for _, v in ipairs(els) do
+    if mappings[v.name] then ret[mappings[v.name].dst] = mappings[v.name].func(v) end
   end
 
   return ret
-end
-
---- remap keys of table according to map
----@param raw table<string, any>
----@param map table<string, string> source > dest
----@return table<string, any>
-M.map_fields = function(raw, map)
-  local out = {}
-  for src, dst in pairs(map) do
-    out[dst] = raw[src]
-  end
-  return out
 end
 
 return M
