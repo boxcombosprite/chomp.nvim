@@ -14,7 +14,10 @@ Rss20.__index = Rss20
 
 ---@protected
 Rss20.find_chann_el = function(self)
-  if not self._doc then vim.notify('tried parsing feed with unitialized parser', 'error') end
+  if not self._doc then
+    vim.notify('tried parsing feed with unitialized parser', 'error')
+    return
+  end
   for _, k in ipairs(self._doc.kids) do
     if k.name == 'rss' then
       for _, j in ipairs(k.el) do
