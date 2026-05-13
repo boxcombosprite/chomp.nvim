@@ -9,22 +9,27 @@ Base.__index = Base
 ---@field _updated string
 ---@field _els table[]
 ---@field _entries_from integer
+---@field _doc XmlDocument
 local Atom10 = setmetatable({}, Base)
 Atom10.__index = Atom10
 
 ---@protected
-Atom10.find_feed_el = function(doc)
-  for _, k in ipairs(doc.kids) do
+Atom10.find_feed_el = function(self)
+  if not self._doc then
+    vim.notify('tried parsing feed with uninitialized parser', 'error')
+    return
+  end
+  for _, k in ipairs(self._doc.kids) do
     if k.name == 'feed' then return k end
   end
 end
 
----@param doc table
+---@param doc XmlDocument
 ---@return Atom10
 Atom10.new = function(doc)
   local self = setmetatable({ _doc = doc }, Atom10)
 
-  local feedel = self.find_feed_el(doc)
+  local feedel = self:find_feed_el()
   if not feedel then error 'no <feed> element' end
 
   local channel_els = feedel.el

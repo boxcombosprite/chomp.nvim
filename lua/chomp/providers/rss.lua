@@ -8,12 +8,14 @@ Base.__index = Base
 ---@field _updated string|nil
 ---@field _els table[]
 ---@field _items_from integer
+---@field _doc XmlDocument
 local Rss20 = setmetatable({}, Base)
 Rss20.__index = Rss20
 
 ---@protected
-Rss20.find_chann_el = function(doc)
-  for _, k in ipairs(doc.kids) do
+Rss20.find_chann_el = function(self)
+  if not self._doc then vim.notify('tried parsing feed with unitialized parser', 'error') end
+  for _, k in ipairs(self._doc.kids) do
     if k.name == 'rss' then
       for _, j in ipairs(k.el) do
         if j.name == 'channel' then return j end
@@ -25,7 +27,7 @@ end
 Rss20.new = function(doc)
   local self = setmetatable({ _doc = doc }, Rss20)
 
-  local channel = self.find_chann_el(doc)
+  local channel = self:find_chann_el()
   if not channel then error 'no <feed> element' end
 
   local channel_els = channel.el
