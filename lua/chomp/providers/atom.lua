@@ -7,7 +7,7 @@ Base.__index = Base
 ---@class Atom10
 ---@field _title string
 ---@field _updated string
----@field _els table[]
+---@field _els table<XmlElement>
 ---@field _entries_from integer
 ---@field _doc XmlDocument
 local Atom10 = setmetatable({}, Base)
@@ -38,9 +38,12 @@ Atom10.new = function(doc)
     i = i + 1
   end
 
-  local meta = xml.extract({ 'title', 'updated' }, { table.unpack(channel_els, 1, i - 1) })
-  self._title = meta.title
-  self._updated = meta.updated
+  local meta = xml.extract({
+    title = { dst = '_title', func = xml.get_element_text },
+    updated = { dst = '_updated', func = xml.get_element_text },
+  }, { table.unpack(channel_els, 1, i - 1) })
+
+  self = vim.tbl_extend('force', self, meta)
   self._entries_from = i
   self._els = channel_els
 
@@ -56,30 +59,38 @@ Atom10.get_updated = function(self) return self._updated end
 ---@return fun(): Post?
 Atom10.posts = function(self)
   local i = self._entries_from - 1
-  local els = self._els
 
+  local value_mappings = {
+    title = { dst = 'title', func = xml.get_element_text },
+    link = { dst = 'url', func = xml.get_element_text },
+    id = { dst = 'guid', func = xml.get_element_text },
+    summary = { dst = 'summary', func = xml.get_element_text },
+    published = {
+      dst = 'published_at',
+      func = function(x)
+        -- convert date to ts
+        return xml.get_element_text(x)
+      end,
+    },
+    updated = {
+      dst = 'updated_at',
+      func = function(x)
+        -- convert
+        return xml.get_element_text(x)
+      end,
+    },
+  }
+
+  ---@return Post?
   return function()
     local ret = {}
     i = i + 1
-    while els[i] and els[i].name ~= 'entry' do
+    if not self._els[i] then return end
+    while self._els[i].name ~= 'entry' do
       i = i + 1
     end
-    if not els[i] then return nil end
-    for _, v in ipairs(els[i].el) do
-      if v.name == 'title' and v.kids[1] then
-        ret.title = v.kids[1].value
-      elseif v.name == 'link' and v.attr.href then
-        ret.url = url.normalize(v.attr.href)
-      elseif v.name == 'id' and v.kids[1] then
-        ret.guid = v.kids[1].value
-      elseif v.name == 'updated' and v.kids[1] then
-        ret.updated_at = v.kids[1].value -- convert to timestamp or some shit
-      elseif v.name == 'published' and v.kids[1] then
-        ret.published_at = v.kids[1].value -- same
-      elseif v.name == 'summary' and v.kids[1] then
-        ret.summary = v.kids[1].value -- respect type attr and shit
-      end
-    end
+
+    ret = xml.extract(value_mappings, self._els[i].el)
 
     return ret
   end
